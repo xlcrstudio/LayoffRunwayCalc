@@ -1,223 +1,478 @@
-import { useState } from 'react'
-import './App.css'
+import { useState } from "react";
 
-const GUMROAD_LINK = 'https://YOUR_GUMROAD_LINK_HERE'
+const SunIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="12" cy="12" r="5"/>
+    <line x1="12" y1="1" x2="12" y2="3"/>
+    <line x1="12" y1="21" x2="12" y2="23"/>
+    <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/>
+    <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+    <line x1="1" y1="12" x2="3" y2="12"/>
+    <line x1="21" y1="12" x2="23" y2="12"/>
+    <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/>
+    <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+  </svg>
+);
 
-const FEATURES = [
-  { icon: '📄', label: 'Severance Analyzer' },
-  { icon: '🏥', label: 'COBRA vs. ACA Comparison' },
-  { icon: '🎯', label: 'Emergency Budget Mode' },
-  { icon: '💼', label: 'Unemployment Estimator' },
-  { icon: '✅', label: 'Day 1 Financial Checklist' },
-]
+const MoonIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+  </svg>
+);
 
-function Tooltip({ text }) {
-  const [visible, setVisible] = useState(false)
-  return (
-    <span
-      className="tooltip-wrap"
-      onMouseEnter={() => setVisible(true)}
-      onMouseLeave={() => setVisible(false)}
-      onFocus={() => setVisible(true)}
-      onBlur={() => setVisible(false)}
-      tabIndex={0}
-      role="tooltip"
-      aria-label={text}
-    >
-      <span className="tooltip-icon" aria-hidden="true">?</span>
-      {visible && (
-        <span className="tooltip-box" role="tooltip">
-          {text}
-        </span>
-      )}
-    </span>
-  )
+const InfoIcon = () => (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline",marginLeft:4,verticalAlign:"middle",opacity:0.6}}>
+    <circle cx="12" cy="12" r="10"/>
+    <line x1="12" y1="8" x2="12" y2="12"/>
+    <line x1="12" y1="16" x2="12.01" y2="16"/>
+  </svg>
+);
+
+function formatMonths(months) {
+  return isFinite(months) ? months.toFixed(1) : "∞";
 }
 
-function NumberInput({ label, value, onChange, tooltip, placeholder }) {
-  return (
-    <div className="input-group">
-      <label>
-        <span className="label-text">{label}</span>
-        {tooltip && <Tooltip text={tooltip} />}
-      </label>
-      <div className="input-wrap">
-        <span className="input-prefix" aria-hidden="true">$</span>
-        <input
-          type="number"
-          value={value}
-          onChange={e => onChange(e.target.value)}
-          placeholder={placeholder}
-          min="0"
-          step="100"
-          aria-label={label}
-        />
-      </div>
-    </div>
-  )
+function formatDays(months) {
+  if (!isFinite(months)) return "∞ days";
+  const days = Math.round(months * 30.44);
+  return `${days.toLocaleString()} days`;
 }
 
-function getColor(months, hasInput) {
-  if (!hasInput || months <= 0) return 'neutral'
-  if (months >= 6) return 'green'
-  if (months >= 3) return 'yellow'
-  return 'red'
+function getStatus(months) {
+  if (!isFinite(months) || months > 12) return "safe";
+  if (months >= 6) return "stable";
+  if (months >= 3) return "warning";
+  return "critical";
 }
 
-const COLOR_TOKENS = {
-  green:   { text: '#16a34a', bg: 'rgba(22,163,74,0.07)',   border: 'rgba(22,163,74,0.18)',  badge: '#dcfce7', badgeText: '#15803d', label: 'Safe'     },
-  yellow:  { text: '#b45309', bg: 'rgba(180,83,9,0.06)',    border: 'rgba(180,83,9,0.18)',   badge: '#fef3c7', badgeText: '#92400e', label: 'Caution'  },
-  red:     { text: '#dc2626', bg: 'rgba(220,38,38,0.06)',   border: 'rgba(220,38,38,0.18)',  badge: '#fee2e2', badgeText: '#b91c1c', label: 'Critical' },
-  neutral: { text: '#94a3b8', bg: 'rgba(148,163,184,0.05)', border: 'rgba(148,163,184,0.1)', badge: null,      badgeText: null,      label: ''         },
-}
-
-function RunwayDisplay({ months, label, size, hasInput }) {
-  const color = getColor(months, hasInput)
-  const c = COLOR_TOKENS[color]
-  const display = hasInput && months > 0 ? months.toFixed(1) : '—'
-
-  return (
-    <div
-      className={`runway-display runway-${size}`}
-      style={{ background: c.bg, borderColor: c.border }}
-    >
-      <div className="runway-top">
-        <span className="runway-number" style={{ color: c.text }}>
-          {display}
-        </span>
-        {c.badge && (
-          <span
-            className="runway-badge"
-            style={{ background: c.badge, color: c.badgeText }}
-          >
-            {c.label}
-          </span>
-        )}
-      </div>
-      <span className="runway-label">months {label}</span>
-    </div>
-  )
-}
+const STATUS_CONFIG = {
+  safe:     { label: "SAFE",     lightBg: "#f0fdf4", lightText: "#15803d", darkBg: "#052e16", darkText: "#4ade80" },
+  stable:   { label: "STABLE",   lightBg: "#fefce8", lightText: "#a16207", darkBg: "#1c1400", darkText: "#facc15" },
+  warning:  { label: "WARNING",  lightBg: "#fff7ed", lightText: "#c2410c", darkBg: "#1c0a00", darkText: "#fb923c" },
+  critical: { label: "CRITICAL", lightBg: "#fef2f2", lightText: "#b91c1c", darkBg: "#1c0000", darkText: "#f87171" },
+};
 
 export default function App() {
-  const [savings, setSavings]     = useState('')
-  const [essentials, setEssentials] = useState('')
-  const [variables, setVariables]   = useState('')
+  const [dark, setDark] = useState(true);
+  const [savings, setSavings] = useState("");
+  const [essential, setEssential] = useState("");
+  const [variable, setVariable] = useState("");
+  const [tooltip, setTooltip] = useState(null);
 
-  const s = parseFloat(savings)    || 0
-  const e = parseFloat(essentials) || 0
-  const v = parseFloat(variables)  || 0
+  const s = parseFloat(savings) || 0;
+  const e = parseFloat(essential) || 0;
+  const v = parseFloat(variable) || 0;
+  const totalBurn = e + v;
+  const survivalBurn = e + v * 0.5;
 
-  const totalMonthly    = e + v
-  const survivalMonthly = e + v * 0.5
+  const runwayMonths = totalBurn > 0 ? s / totalBurn : Infinity;
+  const survivalMonths = survivalBurn > 0 ? s / survivalBurn : Infinity;
 
-  const runway         = totalMonthly    > 0 ? s / totalMonthly    : 0
-  const survivalRunway = survivalMonthly > 0 ? s / survivalMonthly : 0
-  const hasInput       = s > 0 && totalMonthly > 0
+  const hasInput = s > 0 && totalBurn > 0;
+
+  const runwayStatus = hasInput ? getStatus(runwayMonths) : null;
+  const survivalStatus = hasInput ? getStatus(survivalMonths) : null;
+
+  // Theme tokens
+  const T = {
+    bg:           dark ? "#0f172a" : "#f1f5f9",
+    cardBg:       dark ? "#ffffff" : "#ffffff",
+    cardText:     dark ? "#1e293b" : "#1e293b",
+    labelColor:   dark ? "#64748b" : "#64748b",
+    inputBg:      dark ? "#ffffff" : "#ffffff",
+    inputBorder:  dark ? "#e2e8f0" : "#e2e8f0",
+    inputFocus:   "#3b82f6",
+    ctaBg:        dark ? "#1e293b" : "#1e293b",
+    ctaText:      "#ffffff",
+    ctaAccent:    "#f59e0b",
+    toggleBg:     dark ? "#334155" : "#e2e8f0",
+    toggleText:   dark ? "#f1f5f9" : "#475569",
+    footerText:   dark ? "#64748b" : "#94a3b8",
+    shadow:       dark ? "0 25px 50px rgba(0,0,0,0.5)" : "0 25px 50px rgba(0,0,0,0.12)",
+  };
+
+  const styles = {
+    page: {
+      minHeight: "100vh",
+      background: T.bg,
+      display: "flex",
+      flexDirection: "column",
+      alignItems: "center",
+      justifyContent: "flex-start",
+      padding: "24px 16px 48px",
+      fontFamily: "'DM Sans', 'Segoe UI', sans-serif",
+      transition: "background 0.3s",
+    },
+    topBar: {
+      width: "100%",
+      maxWidth: 560,
+      display: "flex",
+      justifyContent: "flex-end",
+      marginBottom: 12,
+    },
+    toggleBtn: {
+      display: "flex",
+      alignItems: "center",
+      gap: 6,
+      padding: "6px 12px",
+      borderRadius: 20,
+      border: "none",
+      background: T.toggleBg,
+      color: T.toggleText,
+      cursor: "pointer",
+      fontSize: 13,
+      fontWeight: 500,
+      transition: "all 0.2s",
+    },
+    card: {
+      background: T.cardBg,
+      borderRadius: 16,
+      padding: "32px 28px",
+      width: "100%",
+      maxWidth: 560,
+      boxShadow: T.shadow,
+      transition: "all 0.3s",
+    },
+    fieldLabel: {
+      fontSize: 11,
+      fontWeight: 700,
+      letterSpacing: "0.1em",
+      color: T.labelColor,
+      marginBottom: 8,
+      display: "flex",
+      alignItems: "center",
+    },
+    inputWrap: {
+      display: "flex",
+      alignItems: "center",
+      border: `1.5px solid ${T.inputBorder}`,
+      borderRadius: 10,
+      background: T.inputBg,
+      padding: "0 14px",
+      marginBottom: 20,
+      transition: "border-color 0.2s",
+    },
+    dollarSign: {
+      color: T.labelColor,
+      fontWeight: 700,
+      fontSize: 16,
+      marginRight: 8,
+      userSelect: "none",
+    },
+    input: {
+      border: "none",
+      outline: "none",
+      background: "transparent",
+      fontSize: 18,
+      fontWeight: 700,
+      color: T.cardText,
+      padding: "14px 0",
+      width: "100%",
+    },
+    divider: {
+      borderTop: `1px solid ${T.inputBorder}`,
+      margin: "8px 0 20px",
+    },
+    sectionLabel: {
+      fontSize: 11,
+      fontWeight: 700,
+      letterSpacing: "0.12em",
+      color: T.labelColor,
+      textAlign: "center",
+      marginBottom: 14,
+    },
+    resultCard: (status) => {
+      const cfg = STATUS_CONFIG[status];
+      return {
+        background: dark ? cfg.darkBg : cfg.lightBg,
+        borderRadius: 12,
+        padding: "20px 20px 16px",
+        marginBottom: 12,
+        position: "relative",
+        transition: "background 0.3s",
+      };
+    },
+    resultMonths: (status) => ({
+      fontSize: 56,
+      fontWeight: 900,
+      lineHeight: 1,
+      color: dark ? STATUS_CONFIG[status].darkText : STATUS_CONFIG[status].lightText,
+      fontVariantNumeric: "tabular-nums",
+    }),
+    resultDays: (status) => ({
+      fontSize: 14,
+      fontWeight: 600,
+      color: dark ? STATUS_CONFIG[status].darkText : STATUS_CONFIG[status].lightText,
+      opacity: 0.75,
+      marginTop: 4,
+      marginBottom: 6,
+      letterSpacing: "0.02em",
+    }),
+    resultLabel: {
+      fontSize: 11,
+      fontWeight: 700,
+      letterSpacing: "0.1em",
+      color: T.labelColor,
+      marginTop: 2,
+    },
+    badge: (status) => {
+      const cfg = STATUS_CONFIG[status];
+      return {
+        position: "absolute",
+        top: 16,
+        right: 16,
+        background: dark ? cfg.darkText : cfg.lightText,
+        color: dark ? cfg.darkBg : "#fff",
+        fontSize: 10,
+        fontWeight: 800,
+        letterSpacing: "0.1em",
+        padding: "3px 8px",
+        borderRadius: 4,
+      };
+    },
+    placeholder: {
+      textAlign: "center",
+      color: T.labelColor,
+      fontSize: 14,
+      padding: "24px 0",
+      opacity: 0.6,
+    },
+    cta: {
+      background: T.ctaBg,
+      borderRadius: 16,
+      padding: "28px 28px 24px",
+      width: "100%",
+      maxWidth: 560,
+      marginTop: 16,
+      boxShadow: T.shadow,
+    },
+    ctaEyebrow: {
+      fontSize: 11,
+      fontWeight: 700,
+      letterSpacing: "0.12em",
+      color: T.ctaAccent,
+      marginBottom: 8,
+    },
+    ctaHeadline: {
+      fontSize: 22,
+      fontWeight: 800,
+      color: T.ctaText,
+      marginBottom: 18,
+      lineHeight: 1.2,
+    },
+    ctaItem: {
+      display: "flex",
+      alignItems: "center",
+      gap: 10,
+      color: "#cbd5e1",
+      fontSize: 14,
+      marginBottom: 10,
+    },
+    ctaIcon: {
+      fontSize: 18,
+      width: 24,
+      textAlign: "center",
+    },
+    ctaBtn: {
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      gap: 8,
+      width: "100%",
+      padding: "16px 24px",
+      background: T.ctaAccent,
+      color: "#1c1000",
+      borderRadius: 10,
+      border: "none",
+      fontSize: 16,
+      fontWeight: 800,
+      cursor: "pointer",
+      marginTop: 20,
+      letterSpacing: "0.01em",
+      transition: "opacity 0.2s",
+    },
+    footer: {
+      fontSize: 11,
+      color: T.footerText,
+      textAlign: "center",
+      marginTop: 20,
+      maxWidth: 560,
+    },
+    tooltipWrap: {
+      position: "relative",
+      display: "inline-block",
+      cursor: "pointer",
+    },
+    tooltipBox: {
+      position: "absolute",
+      top: "calc(100% + 6px)",
+      left: "50%",
+      transform: "translateX(-50%)",
+      background: "#1e293b",
+      color: "#f1f5f9",
+      fontSize: 12,
+      padding: "8px 12px",
+      borderRadius: 8,
+      whiteSpace: "nowrap",
+      zIndex: 10,
+      boxShadow: "0 4px 12px rgba(0,0,0,0.3)",
+      pointerEvents: "none",
+    },
+  };
+
+  const tooltips = {
+    essential: "Rent, utilities, insurance, debt minimums — costs you can't avoid",
+    variable: "Food, transport, subscriptions, dining — costs you can reduce",
+  };
 
   return (
-    <div className="app">
-      <div className="container">
+    <div style={styles.page}>
+      {/* Theme Toggle */}
+      <div style={styles.topBar}>
+        <button style={styles.toggleBtn} onClick={() => setDark(!dark)}>
+          {dark ? <SunIcon /> : <MoonIcon />}
+          {dark ? "Light mode" : "Dark mode"}
+        </button>
+      </div>
 
-        {/* ── HEADER ── */}
-        <header>
-          <span className="eyebrow">Free Tool</span>
-          <h1>Layoff Runway<br />Calculator</h1>
-          <p className="subtitle">
-            Know exactly how long your savings will last — in normal mode
-            and survival mode.
-          </p>
-        </header>
+      {/* Main Card */}
+      <div style={styles.card}>
+        {/* Inputs */}
+        <div style={styles.fieldLabel}>CURRENT SAVINGS</div>
+        <div style={styles.inputWrap}>
+          <span style={styles.dollarSign}>$</span>
+          <input
+            style={styles.input}
+            type="number"
+            placeholder="0"
+            value={savings}
+            onChange={e => setSavings(e.target.value)}
+          />
+        </div>
 
-        {/* ── CALCULATOR CARD ── */}
-        <main className="card" aria-label="Runway calculator">
-
-          <div className="inputs" aria-label="Financial inputs">
-            <NumberInput
-              label="Current savings"
-              value={savings}
-              onChange={setSavings}
-              placeholder="25000"
-            />
-            <NumberInput
-              label="Monthly essential expenses"
-              value={essentials}
-              onChange={setEssentials}
-              tooltip="rent, utilities, insurance, debt minimums"
-              placeholder="2400"
-            />
-            <NumberInput
-              label="Monthly variable expenses"
-              value={variables}
-              onChange={setVariables}
-              tooltip="food, transport, subscriptions, dining out"
-              placeholder="1200"
-            />
-          </div>
-
-          <div className="divider" aria-hidden="true">
-            <span>your runway</span>
-          </div>
-
-          <div className="outputs" aria-live="polite" aria-label="Calculated results">
-            {!hasInput && (
-              <div className="placeholder" aria-label="Enter values above to see your runway">
-                Enter your numbers above
-              </div>
-            )}
-            {(hasInput || true) && (
-              <>
-                <RunwayDisplay
-                  months={runway}
-                  label="of runway"
-                  size="large"
-                  hasInput={hasInput}
-                />
-                <RunwayDisplay
-                  months={survivalRunway}
-                  label="in survival mode — 50% variable cuts"
-                  size="small"
-                  hasInput={hasInput}
-                />
-              </>
-            )}
-          </div>
-
-        </main>
-
-        {/* ── CTA CARD ── */}
-        <aside className="cta-card" aria-label="Upgrade to the full kit">
-          <div className="cta-header">
-            <p className="cta-eyebrow">Want the full picture?</p>
-            <h2>Layoff Survival<br />Financial Kit</h2>
-          </div>
-
-          <ul className="features" aria-label="Included features">
-            {FEATURES.map(f => (
-              <li key={f.label}>
-                <span className="feature-icon" aria-hidden="true">{f.icon}</span>
-                <span>{f.label}</span>
-              </li>
-            ))}
-          </ul>
-
-          <a
-            href={GUMROAD_LINK}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="cta-button"
-            aria-label="Get the Full Kit for $34 — opens Gumroad"
+        <div style={styles.fieldLabel}>
+          MONTHLY ESSENTIAL EXPENSES
+          <span
+            style={styles.tooltipWrap}
+            onMouseEnter={() => setTooltip("essential")}
+            onMouseLeave={() => setTooltip(null)}
           >
-            Get the Full Kit — $34
-            <span className="cta-arrow" aria-hidden="true">→</span>
-          </a>
-        </aside>
+            <InfoIcon />
+            {tooltip === "essential" && (
+              <div style={styles.tooltipBox}>{tooltips.essential}</div>
+            )}
+          </span>
+        </div>
+        <div style={styles.inputWrap}>
+          <span style={styles.dollarSign}>$</span>
+          <input
+            style={styles.input}
+            type="number"
+            placeholder="0"
+            value={essential}
+            onChange={e => setEssential(e.target.value)}
+          />
+        </div>
 
-        <footer>
-          <p>Estimates only. Consult a financial advisor for personalized guidance.</p>
-        </footer>
+        <div style={styles.fieldLabel}>
+          MONTHLY VARIABLE EXPENSES
+          <span
+            style={styles.tooltipWrap}
+            onMouseEnter={() => setTooltip("variable")}
+            onMouseLeave={() => setTooltip(null)}
+          >
+            <InfoIcon />
+            {tooltip === "variable" && (
+              <div style={styles.tooltipBox}>{tooltips.variable}</div>
+            )}
+          </span>
+        </div>
+        <div style={styles.inputWrap}>
+          <span style={styles.dollarSign}>$</span>
+          <input
+            style={styles.input}
+            type="number"
+            placeholder="0"
+            value={variable}
+            onChange={e => setVariable(e.target.value)}
+          />
+        </div>
 
+        {/* Divider */}
+        <div style={styles.divider} />
+        <div style={styles.sectionLabel}>YOUR RUNWAY</div>
+
+        {/* Results */}
+        {hasInput ? (
+          <>
+            {/* Standard Runway */}
+            <div style={styles.resultCard(runwayStatus)}>
+              <div style={styles.resultMonths(runwayStatus)}>
+                {formatMonths(runwayMonths)}
+              </div>
+              <div style={styles.resultDays(runwayStatus)}>
+                {formatDays(runwayMonths)}
+              </div>
+              <div style={styles.resultLabel}>MONTHS OF RUNWAY</div>
+              <div style={styles.badge(runwayStatus)}>
+                {STATUS_CONFIG[runwayStatus].label}
+              </div>
+            </div>
+
+            {/* Survival Mode */}
+            <div style={styles.resultCard(survivalStatus)}>
+              <div style={styles.resultMonths(survivalStatus)}>
+                {formatMonths(survivalMonths)}
+              </div>
+              <div style={styles.resultDays(survivalStatus)}>
+                {formatDays(survivalMonths)}
+              </div>
+              <div style={styles.resultLabel}>
+                MONTHS IN SURVIVAL MODE — 50% VARIABLE CUTS
+              </div>
+              <div style={styles.badge(survivalStatus)}>
+                {STATUS_CONFIG[survivalStatus].label}
+              </div>
+            </div>
+          </>
+        ) : (
+          <div style={styles.placeholder}>
+            Enter your numbers above to see your runway
+          </div>
+        )}
+      </div>
+
+      {/* CTA Section */}
+      <div style={styles.cta}>
+        <div style={styles.ctaEyebrow}>WANT THE FULL PICTURE?</div>
+        <div style={styles.ctaHeadline}>Layoff Survival Financial Kit</div>
+
+        {[
+          ["📄", "Severance Analyzer"],
+          ["🏥", "COBRA vs. ACA Comparison"],
+          ["🎯", "Emergency Budget Mode"],
+          ["📊", "Unemployment Estimator"],
+          ["✅", "Day 1 Financial Checklist"],
+        ].map(([icon, label]) => (
+          <div key={label} style={styles.ctaItem}>
+            <span style={styles.ctaIcon}>{icon}</span>
+            {label}
+          </div>
+        ))}
+
+        <button
+          style={styles.ctaBtn}
+          onClick={() => window.open("https://gumroad.com", "_blank")}
+          onMouseEnter={e => e.currentTarget.style.opacity = "0.9"}
+          onMouseLeave={e => e.currentTarget.style.opacity = "1"}
+        >
+          Get the Full Kit — $34 →
+        </button>
+      </div>
+
+      <div style={styles.footer}>
+        Estimates only. Consult a financial advisor for personalized guidance.
       </div>
     </div>
-  )
+  );
 }
